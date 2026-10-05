@@ -1,0 +1,39 @@
+name: Birefringence CAMB PCA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  run-pca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Fortran compiler and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran
+          python -m pip install --upgrade pip
+          python -m pip install "camb==2.0.4" numpy scipy sympy
+
+      - name: Run frozen birefringence PCA
+        run: |
+          python birefringence_pca.py | tee outputs_run.log
+
+      - name: Upload numerical results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: birefringence-camb-pca
+          path: |
+            outputs/**
+            outputs_run.log
+          if-no-files-found: warn
+          retention-days: 30
